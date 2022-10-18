@@ -5,7 +5,7 @@ from src import current_bot
 from src.models import User
 
 
-@current_bot.register_handler(CommandHandler, ("start", "help"))
+@current_bot.register_handler(CommandHandler, ("start",))
 @current_bot.log_handler
 def start(update: Update, *_) -> None:
     user = update.effective_user
@@ -46,7 +46,7 @@ def rules(update: Update, *_) -> None:
     )
 
 
-@current_bot.register_handler(CommandHandler, ("unsubscribe"))
+@current_bot.register_handler(CommandHandler, ("unsubscribe",))
 @current_bot.log_handler
 def unsubscribe(update: Update, *_) -> None:
     user = update.effective_user
