@@ -1,11 +1,19 @@
-from telegram import Update
-from telegram.ext import CommandHandler
+from enum import Enum, auto
+
+from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove, Update
+from telegram.ext import (
+    CallbackContext,
+    CommandHandler,
+    ConversationHandler,
+    Filters,
+    MessageHandler,
+)
 
 from src import current_bot
-from src.models import User
+from src.models import Response, User
 
 
-@current_bot.register_handler(CommandHandler, ("start",))
+@current_bot.register_handler(CommandHandler, "start")
 @current_bot.log_handler
 def start(update: Update, *_) -> None:
     user = update.effective_user
@@ -22,7 +30,7 @@ def start(update: Update, *_) -> None:
     user.send_message("Вітаю! Ви підписалися на шкільні сповіщення 😊")
 
 
-@current_bot.register_handler(CommandHandler, ("rules"))
+@current_bot.register_handler(CommandHandler, "rules")
 @current_bot.log_handler
 def rules(update: Update, *_) -> None:
     user = update.effective_user
@@ -46,7 +54,7 @@ def rules(update: Update, *_) -> None:
     )
 
 
-@current_bot.register_handler(CommandHandler, ("unsubscribe",))
+@current_bot.register_handler(CommandHandler, "unsubscribe")
 @current_bot.log_handler
 def unsubscribe(update: Update, *_) -> None:
     user = update.effective_user
@@ -60,3 +68,94 @@ def unsubscribe(update: Update, *_) -> None:
         return
 
     user.send_message("Ви не були підписані")
+
+
+@current_bot.register_handler(CommandHandler, "check_text")
+@current_bot.log_handler
+@current_bot.protected
+def check_text(update: Update, *_) -> None:
+    user = update.effective_user
+
+    message = "\n".join(
+        [f"{response.id}: {response.value}" for response in Response.select()]
+    )
+
+    user.send_message(message)
+
+
+@current_bot.log_handler
+@current_bot.protected
+def change_text(update: Update, *_) -> int:
+    user = update.effective_user
+
+    reply_markup = ReplyKeyboardMarkup(
+        [[response.description] for response in Response.select(Response.description)],
+        one_time_keyboard=True,
+        resize_keyboard=True,
+    )
+    user.send_message("Оберіть відповідь", reply_markup=reply_markup)
+
+    return ChangeTextStatus.CHOOSE_RESPONSE
+
+
+@current_bot.log_handler
+@current_bot.protected
+def get_response(update: Update, context: CallbackContext) -> int:
+    user = update.effective_user
+
+    response = (
+        Response.select().where(Response.description == update.message.text).first()
+    )
+    context.user_data["response_id"] = response.id
+
+    user.send_message(
+        f"Поточний текст:\n{response.value}", reply_markup=ReplyKeyboardRemove()
+    )
+    user.send_message(
+        "Напишіть новий текст. Ви можете використовувати HTML-форматування"
+    )
+
+    return ChangeTextStatus.SEND_NEW_TEXT
+
+
+@current_bot.log_handler
+@current_bot.protected
+def get_new_text(update: Update, context: CallbackContext) -> int:
+    user = update.effective_user
+
+    response = Response.get_by_id(context.user_data["response_id"])
+    response.change_value(update.message.text)
+
+    user.send_message("Текст збережено")
+
+    return ConversationHandler.END
+
+
+@current_bot.log_handler
+def cancel(update: Update, *_) -> int:
+    user = update.effective_user
+    user.send_message("Скасовано", reply_markup=ReplyKeyboardRemove())
+
+    return ConversationHandler.END
+
+
+class ChangeTextStatus(Enum):
+    CHOOSE_RESPONSE = auto()
+    SEND_NEW_TEXT = auto()
+
+
+current_bot.dispatcher.add_handler(
+    ConversationHandler(
+        entry_points=[CommandHandler("change_text", change_text)],
+        states={
+            ChangeTextStatus.CHOOSE_RESPONSE: [
+                MessageHandler(Filters.text & ~Filters.command, get_response)
+            ],
+            ChangeTextStatus.SEND_NEW_TEXT: [
+                MessageHandler(Filters.text & ~Filters.command, get_new_text)
+            ],
+        },
+        fallbacks=[CommandHandler("cancel", cancel)],
+        allow_reentry=True,
+    )
+)

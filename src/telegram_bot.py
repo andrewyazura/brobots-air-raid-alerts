@@ -4,6 +4,7 @@ from typing import Any, Callable
 
 from peewee import PostgresqlDatabase
 from telegram import Update
+from telegram.error import BadRequest, Unauthorized
 from telegram.ext import CallbackContext, Defaults, Handler, Updater
 
 
@@ -87,3 +88,13 @@ class TelegramBot:
             return function(context, *args, **kwargs)
 
         return decorated_function
+
+    def logged_send_message(self, chat_id, text, *args, **kwargs) -> None:
+        try:
+            self.bot.send_message(chat_id=chat_id, text=text, *args, **kwargs)
+            self.logger.debug("message sent to chat %s", chat_id)
+
+        except (BadRequest, Unauthorized) as _:
+            self.logger.warning(
+                "chat %s is unavailable or has blocked the bot", chat_id
+            )

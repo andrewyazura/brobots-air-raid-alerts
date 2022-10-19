@@ -22,7 +22,9 @@ def create_bot(config=Config) -> TelegramBot:
 
 
 def create_tables() -> None:
-    from src.models import SchoolDay, User
+    from src.models import Notification, Response, User, populate_responses
 
     with current_bot.database:
-        current_bot.database.create_tables(models=[SchoolDay, User])
+        current_bot.database.create_tables(models=[Notification, Response, User])
+
+    populate_responses()
