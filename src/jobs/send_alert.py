@@ -23,7 +23,9 @@ def send_alert(*_) -> None:
     current_bot.logger.debug("air_raid_alert = %s", air_raid)
 
     time = NotificationTime.get_by_id(1).time
-    notification_time = datetime.time(time.hour, time.minute + 1)
+    notification_time = (
+        datetime.datetime.combine(now.date(), time) + datetime.timedelta(minutes=1)
+    ).time()
 
     if datetime.time(9, 1) <= now.time() <= datetime.time(17, 0):
         message_everyone(Response.get_by_id("text_alert_3").value)
