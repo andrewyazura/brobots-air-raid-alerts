@@ -11,6 +11,7 @@ from telegram.ext import (
 )
 
 from src import current_bot
+from src.jobs.send_alert import set_morning_alert
 from src.models import NotificationTime, Response, User
 
 
@@ -97,6 +98,8 @@ def change_time(update: Update, *_) -> int:
     return ChangeTimeStatus.CHOOSE_TIME
 
 
+@current_bot.log_handler
+@current_bot.protected
 def get_time(update: Update, *_) -> int:
     user = update.effective_user
 
@@ -108,7 +111,9 @@ def get_time(update: Update, *_) -> int:
     notification_time.time = time
     notification_time.save()
 
-    user.send_message(f"Новий час збережено: {time.time()}")
+    set_morning_alert()
+
+    user.send_message(f"Новий час збережено: {time}")
 
     return ConversationHandler.END
 

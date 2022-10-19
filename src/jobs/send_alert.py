@@ -4,6 +4,8 @@ from src import current_bot
 from src.air_raid import get_api
 from src.models import Notification, NotificationTime, Response, User
 
+RESPONSES = {True: "text_alert_1", False: "text_no_alert"}
+
 
 @current_bot.schedule("run_repeating", **current_bot.config.JOB_SEND_ALERT)
 @current_bot.log_job
@@ -28,6 +30,26 @@ def send_alert(*_) -> None:
 
     elif notification_time < now.time() < datetime.time(9, 1):
         message_everyone(Response.get_by_id("text_alert_2").value)
+
+
+def send_morning_alert(*_) -> None:
+    api = get_api()
+    air_raid, _ = api.get_status(tag=current_bot.config.LOCATION)
+
+    Notification.create(air_raid_alert=air_raid)
+    current_bot.logger.debug("air_raid_alert = %s", air_raid)
+
+    message_everyone(Response.get_by_id(RESPONSES[air_raid]).value)
+
+
+def set_morning_alert() -> None:
+    if job := current_bot.jobs.get("send_morning_alert"):
+        job.schedule_removal()
+
+    time = NotificationTime.get_by_id(1).time
+    current_bot.schedule("run_daily", time=time, days=(0, 1, 2, 3, 4))(
+        send_morning_alert
+    )
 
 
 def message_everyone(message) -> None:

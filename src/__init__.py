@@ -18,6 +18,8 @@ def create_bot(config=Config) -> TelegramBot:
 
     create_tables()
 
+    src.jobs.send_alert.set_morning_alert()
+
     return current_bot
 
 

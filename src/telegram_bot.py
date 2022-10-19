@@ -24,6 +24,7 @@ class TelegramBot:
         self.bot = self.updater.bot
         self.dispatcher = self.updater.dispatcher
         self.job_queue = self.updater.job_queue
+        self.jobs = {}
 
     def init_db(self) -> None:
         self.database = PostgresqlDatabase(**self.config.DB_CONFIG)
@@ -72,7 +73,8 @@ class TelegramBot:
 
     def schedule(self, method: str, *args, **kwargs) -> Callable[[Callable], Callable]:
         def decorator(function: Callable) -> Callable:
-            getattr(self.job_queue, method)(callback=function, *args, **kwargs)
+            job = getattr(self.job_queue, method)(callback=function, *args, **kwargs)
+            self.jobs[job.name] = job
             return function
 
         return decorator
