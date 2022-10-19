@@ -9,7 +9,7 @@ class Config:
     with env.prefixed("BOT_"):
         BOT = {
             "TOKEN": env.str("TOKEN"),
-            "OWNER_IDS": env.list("OWNER_IDS"),
+            "OWNER_NICKNAMES": env.list("OWNER_NICKNAMES"),
             "REPORT_TO_IDS": env.list("REPORT_TO_IDS"),
             "CHANNEL_IDS": env.list("CHANNEL_IDS"),
         }

@@ -56,15 +56,15 @@ class TelegramBot:
         def decorated_function(
             update: Update, context: CallbackContext, *args, **kwargs
         ) -> Any | None:
-            user_id = update.effective_user.id
+            username = update.effective_user.username
 
-            if user_id in self.config.BOT["OWNER_IDS"]:
+            if username not in self.config.BOT["OWNER_NICKNAMES"]:
                 self.logger.warning(
-                    "user %s attempted to access a protected handler", user_id
+                    "user %s attempted to access a protected handler", username
                 )
                 return
 
-            self.logger.debug("user %s authenticated as owner", user_id)
+            self.logger.debug("user %s authenticated as owner", username)
             return function(update, context, *args, **kwargs)
 
         return decorated_function
