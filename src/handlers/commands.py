@@ -1,3 +1,4 @@
+import datetime
 from enum import Enum, auto
 
 from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove, Update
@@ -10,7 +11,7 @@ from telegram.ext import (
 )
 
 from src import current_bot
-from src.models import Response, User
+from src.models import NotificationTime, Response, User
 
 
 @current_bot.register_handler(CommandHandler, "start")
@@ -85,6 +86,35 @@ def check_text(update: Update, *_) -> None:
 
 @current_bot.log_handler
 @current_bot.protected
+def change_time(update: Update, *_) -> int:
+    user = update.effective_user
+
+    notification_time = NotificationTime.get_by_id(1)
+
+    user.send_message(f"Поточний час: {notification_time.time}")
+    user.send_message("Надішліть час у форматі ГГ:ХХ")
+
+    return ChangeTimeStatus.CHOOSE_TIME
+
+
+def get_time(update: Update, *_) -> int:
+    user = update.effective_user
+
+    text = update.message.text
+    parsed_time = datetime.datetime.strptime(text, "%H:%M")
+    time = parsed_time.time()
+
+    notification_time = NotificationTime.get_by_id(1)
+    notification_time.time = time
+    notification_time.save()
+
+    user.send_message(f"Новий час збережено: {time.time()}")
+
+    return ConversationHandler.END
+
+
+@current_bot.log_handler
+@current_bot.protected
 def change_text(update: Update, *_) -> int:
     user = update.effective_user
 
@@ -139,9 +169,27 @@ def cancel(update: Update, *_) -> int:
     return ConversationHandler.END
 
 
+class ChangeTimeStatus(Enum):
+    CHOOSE_TIME = auto()
+
+
 class ChangeTextStatus(Enum):
     CHOOSE_RESPONSE = auto()
     SEND_NEW_TEXT = auto()
+
+
+current_bot.dispatcher.add_handler(
+    ConversationHandler(
+        entry_points=[CommandHandler("change_time", change_time)],
+        states={
+            ChangeTimeStatus.CHOOSE_TIME: [
+                MessageHandler(Filters.regex(r"^\d{2}:\d{2}$"), get_time)
+            ]
+        },
+        fallbacks=[CommandHandler("cancel", cancel)],
+        allow_reentry=True,
+    )
+)
 
 
 current_bot.dispatcher.add_handler(

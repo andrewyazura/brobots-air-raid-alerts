@@ -1,6 +1,14 @@
-from datetime import datetime
+import datetime
 
-from peewee import BooleanField, CharField, DateTimeField, Model, TextField
+from peewee import (
+    BooleanField,
+    CharField,
+    DateTimeField,
+    DoesNotExist,
+    Model,
+    TextField,
+    TimeField,
+)
 
 from src import current_bot
 
@@ -11,35 +19,44 @@ class BaseModel(Model):
 
 
 class User(BaseModel):
-    user_id = CharField(unique=True)
+    user_id = CharField()
     username = CharField(null=True)
     subscribed = BooleanField(default=True)
 
-    joined = DateTimeField(default=datetime.now)
+    joined = DateTimeField(default=datetime.datetime.now)
 
 
 class Notification(BaseModel):
     air_raid_alert = BooleanField()
-    datetime = DateTimeField(default=datetime.now)
+    datetime = DateTimeField(default=datetime.datetime.now)
 
 
 class Response(BaseModel):
-    id = CharField(unique=True)
+    id = CharField()
     value = TextField()
     previous_value = TextField(null=True)
     description = TextField()
 
-    updated = DateTimeField(default=datetime.now)
+    updated = DateTimeField(default=datetime.datetime.now)
 
     def change_value(self, new_value: str) -> None:
         self.previous_value = self.value
         self.value = new_value
-        self.updated = datetime.now()
+        self.updated = datetime.datetime.now()
 
         self.save()
 
 
+class NotificationTime(BaseModel):
+    time = TimeField()
+
+
 def populate_responses() -> None:
+    try:
+        NotificationTime.get_by_id(1)
+    except DoesNotExist:
+        NotificationTime.create(time=datetime.time(8, 10))
+
     Response.get_or_create(
         id="text_no_alert",
         value="🟢 <b>Тривоги немає.</b> Школа #brobots сьогодні "

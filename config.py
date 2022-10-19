@@ -2,7 +2,7 @@ from environs import Env
 from pytz import timezone
 
 env = Env()
-env.read_env()
+env.read_env(override=True)
 
 
 class Config:
@@ -57,9 +57,6 @@ class Config:
         AIR_RAID_API = {"url": env.str("URL"), "timeout": env.float("TIMEOUT")}
 
     with env.prefixed("JOB_SEND_ALERT_"):
-        JOB_SEND_ALERT = {
-            "time": env.time("TIME"),
-            "days": tuple(int(day) for day in env.list("DAYS")),
-        }
+        JOB_SEND_ALERT = {"interval": env.int("INTERVAL"), "first": env.int("FIRST")}
 
     LOCATION = env.str("LOCATION")
