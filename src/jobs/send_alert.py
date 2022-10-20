@@ -18,9 +18,12 @@ def send_alert(*_) -> None:
 
     api = get_api()
     air_raid, _ = api.get_status(tag=current_bot.config.LOCATION)
+    current_bot.logger.debug("air_raid_alert = %s", air_raid)
+
+    if not air_raid:
+        return
 
     Notification.create(air_raid_alert=air_raid)
-    current_bot.logger.debug("air_raid_alert = %s", air_raid)
 
     time = NotificationTime.get_by_id(1).time
     notification_time = (
@@ -37,10 +40,9 @@ def send_alert(*_) -> None:
 def send_morning_alert(*_) -> None:
     api = get_api()
     air_raid, _ = api.get_status(tag=current_bot.config.LOCATION)
-
-    Notification.create(air_raid_alert=air_raid)
     current_bot.logger.debug("air_raid_alert = %s", air_raid)
 
+    Notification.create(air_raid_alert=air_raid)
     message_everyone(Response.get_by_id(RESPONSES[air_raid]).value)
 
 
