@@ -88,12 +88,24 @@ def check_text(update: Update, *_) -> None:
 
     message = "\n\n".join(
         [
-            f"{response.id}: {response.value}"
+            f"<i>{response.id}:</i> {response.value}"
             for response in Response.select().order_by(Response.keyboard_order)
         ]
     )
 
     user.send_message(message)
+
+
+@current_bot.register_handler(CommandHandler, "check_time")
+@current_bot.log_handler
+@current_bot.protected
+def check_time(update: Update, *_) -> None:
+    user = update.effective_user
+
+    notification_time = NotificationTime.get_by_id(1)
+    time = notification_time.time.strftime("%H:%M")
+
+    user.send_message(f"Заданий час: {time}")
 
 
 @current_bot.log_handler
