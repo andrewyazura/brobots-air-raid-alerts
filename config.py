@@ -31,6 +31,8 @@ class Config:
         }
 
     with env.prefixed("LOG_"):
+        LOG_FILENAME = env.str("FILENAME")
+
         LOG_CONFIG = {
             "version": 1,
             "disable_existing_loggers": False,
@@ -42,7 +44,7 @@ class Config:
                     "level": env.log_level("LEVEL"),
                     "formatter": "file",
                     "class": "logging.handlers.TimedRotatingFileHandler",
-                    "filename": env.str("FILENAME"),
+                    "filename": LOG_FILENAME,
                     "when": env.str("ROTATE_TIME"),
                     "backupCount": env.int("ROTATE_BACKUP_COUNT"),
                     "utc": True,

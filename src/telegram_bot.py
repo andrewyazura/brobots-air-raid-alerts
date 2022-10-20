@@ -82,7 +82,7 @@ class TelegramBot:
     def log_job(self, function: Callable) -> Callable:
         @wraps(function)
         def decorated_function(context: CallbackContext, *args, **kwargs) -> Any:
-            self.logger.debug("Job:")
+            self.logger.debug("Job: %s", function.__name__)
             self.logger.debug("bot_data: %s", str(context.bot_data))
             self.logger.debug("user_data: %s", str(context.user_data))
             self.logger.debug("chat_data: %s", str(context.chat_data))

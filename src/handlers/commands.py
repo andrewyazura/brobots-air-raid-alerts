@@ -52,7 +52,7 @@ def rules(update: Update, *_) -> None:
         "Після відбою ми розпочинаємо очне навчання.\n"
         "    ▶️ якщо тривога розпочалась після 9:00, то діємо за вже відпрацьованим "
         "планом - уроки призупиняються та всі спускаються в укриття. Після відбою ми "
-        "продовжуємо очне навчання.\n"
+        "продовжуємо очне навчання."
     )
 
 
@@ -72,13 +72,21 @@ def unsubscribe(update: Update, *_) -> None:
     user.send_message("Ви не були підписані")
 
 
+@current_bot.register_handler(CommandHandler, "logs")
+@current_bot.log_handler
+def get_logs(update: Update, *_) -> None:
+    user = update.effective_user
+    log_file = open(current_bot.config.LOG_FILENAME, "rb")
+    user.send_document(document=log_file)
+
+
 @current_bot.register_handler(CommandHandler, "check_text")
 @current_bot.log_handler
 @current_bot.protected
 def check_text(update: Update, *_) -> None:
     user = update.effective_user
 
-    message = "\n".join(
+    message = "\n\n".join(
         [
             f"{response.id}: {response.value}"
             for response in Response.select().order_by(Response.keyboard_order)
@@ -94,8 +102,9 @@ def change_time(update: Update, *_) -> int:
     user = update.effective_user
 
     notification_time = NotificationTime.get_by_id(1)
+    time = notification_time.time.strftime("%H:%M")
 
-    user.send_message(f"Поточний час: {notification_time.time}")
+    user.send_message(f"Заданий час: {time}")
     user.send_message("Надішліть час у форматі ГГ:ХХ")
 
     return ChangeTimeStatus.CHOOSE_TIME
