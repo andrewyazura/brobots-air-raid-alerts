@@ -20,10 +20,17 @@ def send_alert(*_) -> None:
     air_raid, _ = api.get_status(tag=current_bot.config.LOCATION)
     current_bot.logger.debug("air_raid_alert = %s", air_raid)
 
+    Notification.create(air_raid_alert=air_raid)
+
     if not air_raid:
         return
 
-    Notification.create(air_raid_alert=air_raid)
+    last_notification = (
+        Notification.select().order_by(Notification.datetime.desc()).get()
+    )
+
+    if last_notification.air_raid_alert:
+        return
 
     time = NotificationTime.get_by_id(1).time
     notification_time = (
