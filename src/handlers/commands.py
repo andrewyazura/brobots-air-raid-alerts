@@ -123,8 +123,14 @@ def get_time(update: Update, *_) -> int:
 def change_text(update: Update, *_) -> int:
     user = update.effective_user
 
+    notification_time = NotificationTime.get_by_id(1)
+    time = notification_time.time.strftime("%H:%M")
+
     reply_markup = ReplyKeyboardMarkup(
-        [[response.description] for response in Response.select(Response.description)],
+        [
+            [response.description.format(time)]
+            for response in Response.select(Response.description)
+        ],
         one_time_keyboard=True,
         resize_keyboard=True,
     )
