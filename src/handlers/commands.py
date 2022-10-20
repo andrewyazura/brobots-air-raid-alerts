@@ -79,7 +79,10 @@ def check_text(update: Update, *_) -> None:
     user = update.effective_user
 
     message = "\n".join(
-        [f"{response.id}: {response.value}" for response in Response.select()]
+        [
+            f"{response.id}: {response.value}"
+            for response in Response.select().order_by(Response.keyboard_order)
+        ]
     )
 
     user.send_message(message)
@@ -129,7 +132,9 @@ def change_text(update: Update, *_) -> int:
     reply_markup = ReplyKeyboardMarkup(
         [
             [response.description.format(time)]
-            for response in Response.select(Response.description)
+            for response in Response.select(Response.description).order_by(
+                Response.keyboard_order
+            )
         ],
         one_time_keyboard=True,
         resize_keyboard=True,
@@ -144,9 +149,11 @@ def change_text(update: Update, *_) -> int:
 def get_response(update: Update, context: CallbackContext) -> int:
     user = update.effective_user
 
-    response = (
-        Response.select().where(Response.description == update.message.text).first()
-    )
+    notification_time = NotificationTime.get_by_id(1)
+    time = notification_time.time.strftime("%H:%M")
+    description = update.message.text.replace(time, "{}", 1)
+
+    response = Response.select().where(Response.description == description).first()
     context.user_data["response_id"] = response.id
 
     user.send_message(

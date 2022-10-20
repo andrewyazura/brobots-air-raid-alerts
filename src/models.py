@@ -6,6 +6,7 @@ from peewee import (
     DateTimeField,
     DoesNotExist,
     Model,
+    SmallIntegerField,
     TextField,
     TimeField,
 )
@@ -32,10 +33,11 @@ class Notification(BaseModel):
 
 
 class Response(BaseModel):
-    id = CharField()
+    id = CharField(unique=True)
     value = TextField()
     previous_value = TextField(null=True)
     description = TextField()
+    keyboard_order = SmallIntegerField()
 
     updated = DateTimeField(default=datetime.datetime.now)
 
@@ -62,6 +64,7 @@ def populate_responses() -> None:
         value="🟢 <b>Тривоги немає.</b> Школа #brobots сьогодні "
         "буде працювати очно, чекаємо вас у школі.",
         description="Тривоги немає",
+        keyboard_order=0,
     )
 
     Response.get_or_create(
@@ -69,6 +72,7 @@ def populate_responses() -> None:
         value="🔴 <b>Увага! В Києві зараз тривога.</b> Школа #brobots "
         "сьогодні буде працювати онлайн.",
         description="Тривога є о {}",
+        keyboard_order=1,
     )
 
     Response.get_or_create(
@@ -79,6 +83,7 @@ def populate_responses() -> None:
         "Керуйтесь рекомендаціями від батьків. Після відбою ми "
         "розпочинаємо очне навчання.",
         description="Тривога почалася між {} та 9:00",
+        keyboard_order=2,
     )
 
     Response.get_or_create(
@@ -87,4 +92,5 @@ def populate_responses() -> None:
         "спускайтесь у шкільне укриття в кафе. Після відбою ми "
         "розпочинаємо очне навчання.",
         description="Тривога почалася між 9:00 та 17:00",
+        keyboard_order=3,
     )
