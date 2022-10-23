@@ -25,6 +25,7 @@ def create_bot(config=Config) -> TelegramBot:
 
 def create_tables() -> None:
     from src.models import (
+        ExceptionRange,
         Notification,
         NotificationTime,
         Response,
@@ -34,7 +35,7 @@ def create_tables() -> None:
 
     with current_bot.database:
         current_bot.database.create_tables(
-            models=[Notification, NotificationTime, Response, User]
+            models=[ExceptionRange, Notification, NotificationTime, Response, User]
         )
 
     populate_responses()

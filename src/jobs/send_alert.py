@@ -2,18 +2,42 @@ import datetime
 
 from src import current_bot
 from src.air_raid import get_api
-from src.models import Notification, NotificationTime, Response, User
+from src.models import Notification, NotificationTime, Response, User, ExceptionRange
 
 RESPONSES = {True: "text_alert_1", False: "text_no_alert"}
+
+
+def get_now() -> datetime:
+    return datetime.datetime.now(tz=current_bot.config.DEFAULTS["tzinfo"])
+
+
+def check_date() -> tuple[bool, str]:
+    now = get_now()
+    weekday = now.weekday()
+
+    if weekday >= 5:
+        return False, ""
+
+    today = now.date()
+    current_exception = (
+        ExceptionRange.select()
+        .where(
+            (ExceptionRange.start_date <= today) & (ExceptionRange.end_date >= today)
+        )
+        .first()
+    )
+
+    if current_exception:
+        return False, current_exception.message
+
+    return True, ""
 
 
 @current_bot.schedule("run_repeating", **current_bot.config.JOB_SEND_ALERT)
 @current_bot.log_job
 def send_alert(*_) -> None:
-    now = datetime.datetime.now(tz=current_bot.config.DEFAULTS["tzinfo"])
-    weekday = now.weekday()
-
-    if weekday >= 5:
+    check, _ = check_date()
+    if not check:
         return
 
     api = get_api()
@@ -35,6 +59,7 @@ def send_alert(*_) -> None:
     if last_notification.air_raid_alert:
         return
 
+    now = get_now()
     time = NotificationTime.get_by_id(1).time
     notification_time = (
         datetime.datetime.combine(now.date(), time) + datetime.timedelta(minutes=1)
@@ -48,6 +73,14 @@ def send_alert(*_) -> None:
 
 
 def send_morning_alert(*_) -> None:
+    check, message = check_date()
+
+    if message:
+        message_everyone(message)
+
+    if not check:
+        return
+
     api = get_api()
     air_raid, _ = api.get_status(tag=current_bot.config.LOCATION)
     current_bot.logger.debug("air_raid_alert = %s", air_raid)
@@ -61,9 +94,7 @@ def set_morning_alert() -> None:
         job.schedule_removal()
 
     time = NotificationTime.get_by_id(1).time
-    current_bot.schedule("run_daily", time=time, days=(0, 1, 2, 3, 4))(
-        send_morning_alert
-    )
+    current_bot.schedule("run_daily", time=time)(send_morning_alert)
 
 
 def message_everyone(message) -> None:

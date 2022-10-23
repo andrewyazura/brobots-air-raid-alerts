@@ -3,6 +3,7 @@ import datetime
 from peewee import (
     BooleanField,
     CharField,
+    DateField,
     DateTimeField,
     DoesNotExist,
     Model,
@@ -51,6 +52,14 @@ class Response(BaseModel):
 
 class NotificationTime(BaseModel):
     time = TimeField()
+
+
+class ExceptionRange(BaseModel):
+    message = TextField()
+    type = CharField()
+
+    start_date = DateField()
+    end_date = DateField()
 
 
 def populate_responses() -> None:

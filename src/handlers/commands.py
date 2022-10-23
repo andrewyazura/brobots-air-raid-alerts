@@ -11,8 +11,9 @@ from telegram.ext import (
 )
 
 from src import current_bot
+from src.constants import ExceptionRangeType
 from src.jobs.send_alert import set_morning_alert
-from src.models import NotificationTime, Response, User
+from src.models import ExceptionRange, NotificationTime, Response, User
 
 
 @current_bot.register_handler(CommandHandler, "start")
@@ -200,6 +201,115 @@ def get_new_text(update: Update, context: CallbackContext) -> int:
     return ConversationHandler.END
 
 
+@current_bot.register_handler(CommandHandler, ("check_mon", "check_vacation"))
+@current_bot.log_handler
+@current_bot.protected
+def check_exception_range(update: Update, *_) -> None:
+    user = update.effective_user
+    text = update.message.text
+    range_type = None
+
+    if "mon" in text:
+        range_type = ExceptionRangeType.MON
+    elif "vacation" in text:
+        range_type = ExceptionRangeType.VACATION
+
+    ranges = ExceptionRange.select().where(ExceptionRange.type == range_type)
+
+    if not ranges:
+        user.send_message("Немає")
+        return
+
+    message = "\n\n".join(
+        f"З {r.start_date} до {r.end_date} - {r.message}" for r in ranges
+    )
+
+    user.send_message(message)
+
+
+@current_bot.log_handler
+@current_bot.protected
+def add_exception_range(update: Update, context: CallbackContext) -> int:
+    user = update.effective_user
+    user.send_message("Надішліть повідомлення, що буде надсилатися")
+
+    text = update.message.text
+    range_type = None
+
+    if "mon" in text:
+        range_type = ExceptionRangeType.MON
+    elif "vacation" in text:
+        range_type = ExceptionRangeType.VACATION
+
+    context.user_data["type"] = range_type
+
+    return AddExceptionRangeStatus.ENTER_TEXT
+
+
+@current_bot.log_handler
+@current_bot.protected
+def get_range_message(update: Update, context: CallbackContext) -> int:
+    context.user_data["message"] = update.message.text
+
+    user = update.effective_user
+    user.send_message("Надішліть початок дії у форматі РРРР-ММ-ДД")
+    return AddExceptionRangeStatus.ENTER_START_DATE
+
+
+@current_bot.log_handler
+@current_bot.protected
+def get_range_start(update: Update, context: CallbackContext) -> int:
+    user = update.effective_user
+
+    try:
+        date = update.message.text
+        date = datetime.datetime.strptime(date, "%Y-%m-%d").date()
+    except ValueError:
+        user.send_message("Неправильна дата, спробуйте ще раз")
+        return AddExceptionRangeStatus.ENTER_START_DATE
+
+    context.user_data["start_date"] = date
+
+    user.send_message("Надішліть кінець дії у форматі РРРР-ММ-ДД")
+    return AddExceptionRangeStatus.ENTER_END_DATE
+
+
+@current_bot.log_handler
+@current_bot.protected
+def get_range_end(update: Update, context: CallbackContext) -> int:
+    user = update.effective_user
+
+    try:
+        end_date = update.message.text
+        end_date = datetime.datetime.strptime(end_date, "%Y-%m-%d").date()
+    except ValueError:
+        user.send_message("Неправильна дата, спробуйте ще раз")
+        return AddExceptionRangeStatus.ENTER_END_DATE
+
+    message = context.user_data["message"]
+    start_date = context.user_data["start_date"]
+
+    if end_date < start_date:
+        user.send_message(
+            "Кінцева дата менша за початкову, можливо"
+            " Ви переплутали порядок. Уведіть початок дії знову"
+        )
+        return AddExceptionRangeStatus.ENTER_START_DATE
+
+    ExceptionRange.create(
+        message=message,
+        start_date=start_date,
+        end_date=end_date,
+        type=context.user_data["type"],
+    )
+
+    user.send_message(
+        f"Готово! З {start_date} до {end_date} приходитиме повідомлення: {message}"
+    )
+
+    return ConversationHandler.END
+
+
 @current_bot.log_handler
 def cancel(update: Update, *_) -> int:
     user = update.effective_user
@@ -215,6 +325,12 @@ class ChangeTimeStatus(Enum):
 class ChangeTextStatus(Enum):
     CHOOSE_RESPONSE = auto()
     SEND_NEW_TEXT = auto()
+
+
+class AddExceptionRangeStatus(Enum):
+    ENTER_TEXT = auto()
+    ENTER_START_DATE = auto()
+    ENTER_END_DATE = auto()
 
 
 current_bot.dispatcher.add_handler(
@@ -244,5 +360,26 @@ current_bot.dispatcher.add_handler(
         },
         fallbacks=[CommandHandler("cancel", cancel)],
         allow_reentry=True,
+    )
+)
+
+current_bot.dispatcher.add_handler(
+    ConversationHandler(
+        entry_points=[
+            CommandHandler("change_text_mon", add_exception_range),
+            CommandHandler("change_text_vacation", add_exception_range),
+        ],
+        states={
+            AddExceptionRangeStatus.ENTER_TEXT: [
+                MessageHandler(Filters.text, get_range_message)
+            ],
+            AddExceptionRangeStatus.ENTER_START_DATE: [
+                MessageHandler(Filters.regex(r"^\d{4}-\d{2}-\d{2}$"), get_range_start)
+            ],
+            AddExceptionRangeStatus.ENTER_END_DATE: [
+                MessageHandler(Filters.regex(r"^\d{4}-\d{2}-\d{2}$"), get_range_end)
+            ],
+        },
+        fallbacks=[CommandHandler("cancel", cancel)],
     )
 )
