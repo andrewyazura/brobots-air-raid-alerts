@@ -23,6 +23,7 @@ def check_date() -> tuple[bool, str]:
     weekday = now.weekday()
 
     if weekday >= 5:
+        current_bot.logger.debug("job cancelled - not a weekday")
         return False, ""
 
     today = now.date()
@@ -35,6 +36,9 @@ def check_date() -> tuple[bool, str]:
     )
 
     if current_exception:
+        current_bot.logger.debug(
+            "job cancelled - ExceptionRange(%i)", current_exception.id
+        )
         if current_exception.start_date == today:
             return False, current_exception.message
         return False, ""
@@ -42,6 +46,9 @@ def check_date() -> tuple[bool, str]:
     current_exception = ExceptionDay.select().where(ExceptionDay.date == today).first()
 
     if current_exception:
+        current_bot.logger.debug(
+            "job cancelled - ExceptionDay(%i)", current_exception.id
+        )
         return False, current_exception.message
 
     return True, ""
@@ -51,6 +58,7 @@ def check_date() -> tuple[bool, str]:
 @current_bot.log_job
 def send_alert(*_) -> None:
     check, _ = check_date()
+
     if not check:
         return
 
@@ -106,9 +114,11 @@ def send_morning_alert(*_) -> None:
 def set_morning_alert() -> None:
     if job := current_bot.jobs.get("send_morning_alert"):
         job.schedule_removal()
+        current_bot.logger.debug("morning_alert job cancelled")
 
     time = NotificationTime.get_by_id(1).time
     current_bot.schedule("run_daily", time=time)(send_morning_alert)
+    current_bot.logger.debug("morning_alert job scheduled for %s", time)
 
 
 def message_everyone(message) -> None:
