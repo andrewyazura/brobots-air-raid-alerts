@@ -90,7 +90,9 @@ def check_text(update: Update, *_) -> None:
     message = "\n\n".join(
         [
             f"<i>{response.id}:</i> {response.value}"
-            for response in Response.select().order_by(Response.keyboard_order)
+            for response in Response.select()
+            .order_by(Response.keyboard_order)
+            .iterator()
         ]
     )
 
@@ -154,9 +156,9 @@ def change_text(update: Update, *_) -> int:
     reply_markup = ReplyKeyboardMarkup(
         [
             [response.description.format(time)]
-            for response in Response.select(Response.description).order_by(
-                Response.keyboard_order
-            )
+            for response in Response.select(Response.description)
+            .order_by(Response.keyboard_order)
+            .iterator()
         ],
         one_time_keyboard=True,
         resize_keyboard=True,
@@ -205,6 +207,7 @@ def get_new_text(update: Update, context: CallbackContext) -> int:
 @current_bot.log_handler
 @current_bot.protected
 def check_exception_range(update: Update, *_) -> None:
+    today = datetime.date.today()
     user = update.effective_user
     text = update.message.text
     range_type = None
@@ -214,15 +217,19 @@ def check_exception_range(update: Update, *_) -> None:
     elif "vacation" in text:
         range_type = ExceptionRangeType.VACATION
 
-    ranges = ExceptionRange.select().where(ExceptionRange.type == range_type)
-
-    if not ranges:
-        user.send_message("Немає")
-        return
+    ranges = (
+        ExceptionRange.select()
+        .where((ExceptionRange.type == range_type) & (ExceptionRange.end_date >= today))
+        .iterator()
+    )
 
     message = "\n\n".join(
         f"З {r.start_date} до {r.end_date} - {r.message}" for r in ranges
     )
+
+    if not message:
+        user.send_message("Немає")
+        return
 
     user.send_message(message)
 
