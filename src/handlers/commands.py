@@ -119,6 +119,7 @@ def unsubscribe(update: Update, *_) -> None:
 
 @current_bot.register_handler(CommandHandler, "logs")
 @current_bot.log_handler
+@current_bot.protected
 def get_logs(update: Update, *_) -> None:
     user = update.effective_user
     log_file = open(current_bot.config.LOG_FILENAME, "rb")
