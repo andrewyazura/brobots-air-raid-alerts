@@ -2,7 +2,14 @@ import datetime
 
 from src import current_bot
 from src.air_raid import get_api
-from src.models import Notification, NotificationTime, Response, User, ExceptionRange
+from src.models import (
+    ExceptionDay,
+    ExceptionRange,
+    Notification,
+    NotificationTime,
+    Response,
+    User,
+)
 
 RESPONSES = {True: "text_alert_1", False: "text_no_alert"}
 
@@ -26,6 +33,13 @@ def check_date() -> tuple[bool, str]:
         )
         .first()
     )
+
+    if current_exception:
+        if current_exception.start_date == today:
+            return False, current_exception.message
+        return False, ""
+
+    current_exception = ExceptionDay.select().where(ExceptionDay.date == today).first()
 
     if current_exception:
         return False, current_exception.message

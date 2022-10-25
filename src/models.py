@@ -62,6 +62,13 @@ class ExceptionRange(BaseModel):
     end_date = DateField()
 
 
+class ExceptionDay(BaseModel):
+    message = TextField(null=True)
+    type = CharField()
+
+    date = DateField()
+
+
 def populate_responses() -> None:
     try:
         NotificationTime.get_by_id(1)

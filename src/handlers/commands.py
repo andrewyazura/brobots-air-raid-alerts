@@ -1,7 +1,9 @@
 import datetime
 from enum import Enum, auto
+from typing import Literal
 
 from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove, Update
+from telegram import User as TelegramUser
 from telegram.ext import (
     CallbackContext,
     CommandHandler,
@@ -11,9 +13,29 @@ from telegram.ext import (
 )
 
 from src import current_bot
-from src.constants import ExceptionRangeType
+from src.constants import ExceptionDayType, ExceptionRangeType
 from src.jobs.send_alert import set_morning_alert
-from src.models import ExceptionRange, NotificationTime, Response, User
+from src.models import ExceptionDay, ExceptionRange, NotificationTime, Response, User
+
+
+class ChangeTimeStatus(Enum):
+    CHOOSE_TIME = auto()
+
+
+class ChangeTextStatus(Enum):
+    CHOOSE_RESPONSE = auto()
+    SEND_NEW_TEXT = auto()
+
+
+class AddExceptionRangeStatus(Enum):
+    ENTER_TEXT = auto()
+    ENTER_START_DATE = auto()
+    ENTER_END_DATE = auto()
+
+
+class AddExceptionDayStatus(Enum):
+    ENTER_TEXT = auto()
+    ENTER_DATE = auto()
 
 
 @current_bot.register_handler(CommandHandler, "start")
@@ -31,6 +53,28 @@ def start(update: Update, *_) -> None:
         db_user.save(only=(User.subscribed,))
 
     user.send_message("Вітаю! Ви підписалися на шкільні сповіщення 😊")
+
+
+@current_bot.register_handler(CommandHandler, "help")
+@current_bot.log_handler
+@current_bot.protected
+def commands(update: Update, *_) -> None:
+    user = update.effective_user
+    user.send_message(
+        "/check_text - перевірити задані повідомлення для сповіщень\n"
+        "/change_text - змінити повідомлення сповіщень\n\n"
+        "/check_time - переглянути час сповіщень\n"
+        "/change_time - змінити час сповіщень\n\n"
+        "/check_vacation - переглянути канікули\n"
+        "/change_text_vacation - додати канікули\n\n"
+        "/check_mon - переглянути повідомлення МОН\n"
+        "/change_text_mon - додати повідомлення МОН\n\n"
+        "/check_holiday - переглянути свята\n"
+        "/change_text_holiday - переглянути свята\n\n"
+        "/check_exception - переглянути дні, коли бот не працює\n"
+        "/enter_exceptions - додати дні, коли бот не працюватиме\n\n"
+        "/logs - переглянути логи"
+    )
 
 
 @current_bot.register_handler(CommandHandler, "rules")
@@ -317,27 +361,108 @@ def get_range_end(update: Update, context: CallbackContext) -> int:
     return ConversationHandler.END
 
 
+@current_bot.register_handler(CommandHandler, ("check_exception", "check_holiday"))
+@current_bot.log_handler
+@current_bot.protected
+def check_exception_days(update: Update, *_) -> None:
+    today = datetime.datetime.today()
+    user = update.effective_user
+    text = update.message.text
+    day_type = None
+
+    if "exceptions" in text:
+        day_type = ExceptionDayType.EXCEPTION
+    elif "holiday" in text:
+        day_type = ExceptionDayType.HOLIDAY
+
+    days = (
+        ExceptionDay.select()
+        .where(ExceptionDay.type == day_type, ExceptionDay.date >= today)
+        .iterator()
+    )
+
+    message = "\n\n".join(
+        f"{d.date}" + (f" - {d.message}" if d.message else "") for d in days
+    )
+
+    if not message:
+        user.send_message("Немає")
+        return
+
+    user.send_message(message)
+
+
+def send_date_rules(user: TelegramUser) -> Literal[AddExceptionDayStatus.ENTER_DATE]:
+    user.send_message("Надішліть дату у форматі ММ-ДД або РРРР-ММ-ДД")
+    user.send_message("За відсутності року, буде використано поточний рік")
+    user.send_message("Щоб закінчити, напишіть /cancel")
+    return AddExceptionDayStatus.ENTER_DATE
+
+
+@current_bot.log_handler
+@current_bot.protected
+def add_exception_day(update: Update, context: CallbackContext) -> int:
+    text = update.message.text
+    day_type = None
+
+    if "exceptions" in text:
+        day_type = ExceptionDayType.EXCEPTION
+    elif "holiday" in text:
+        day_type = ExceptionDayType.HOLIDAY
+
+    context.user_data["type"] = day_type
+    user = update.effective_user
+
+    if day_type == ExceptionDayType.EXCEPTION:
+        return send_date_rules(user)
+
+    user.send_message("Надішліть повідомлення, що буде надсилатися")
+    return AddExceptionDayStatus.ENTER_TEXT
+
+
+@current_bot.log_handler
+@current_bot.protected
+def get_day_message(update: Update, context: CallbackContext) -> int:
+    context.user_data["message"] = update.message.text
+    user = update.effective_user
+    return send_date_rules(user)
+
+
+@current_bot.log_handler
+@current_bot.protected
+def get_day_date(update: Update, context: CallbackContext) -> int:
+    user = update.effective_user
+    message = context.user_data.get("message")
+    current_year = datetime.date.today().year
+
+    try:
+        date = update.message.text
+        if len(date) == 10:
+            date = datetime.datetime.strptime(date, "%Y-%m-%d").date()
+        else:
+            date = (
+                datetime.datetime.strptime(date, "%m-%d")
+                .date()
+                .replace(year=current_year)
+            )
+
+    except ValueError:
+        user.send_message("Неправильна дата, спробуйте ще раз")
+        return AddExceptionDayStatus.ENTER_DATE
+
+    ExceptionDay.create(message=message, date=date, type=context.user_data["type"])
+    user.send_message(f"Додано день: {date}" + (f" - {message}" if message else ""))
+    user.send_message("Надішліть ще одну дату\n/cancel, щоб закінчити")
+
+    return AddExceptionDayStatus.ENTER_DATE
+
+
 @current_bot.log_handler
 def cancel(update: Update, *_) -> int:
     user = update.effective_user
-    user.send_message("Скасовано", reply_markup=ReplyKeyboardRemove())
+    user.send_message("Готово", reply_markup=ReplyKeyboardRemove())
 
     return ConversationHandler.END
-
-
-class ChangeTimeStatus(Enum):
-    CHOOSE_TIME = auto()
-
-
-class ChangeTextStatus(Enum):
-    CHOOSE_RESPONSE = auto()
-    SEND_NEW_TEXT = auto()
-
-
-class AddExceptionRangeStatus(Enum):
-    ENTER_TEXT = auto()
-    ENTER_START_DATE = auto()
-    ENTER_END_DATE = auto()
 
 
 current_bot.dispatcher.add_handler(
@@ -385,6 +510,26 @@ current_bot.dispatcher.add_handler(
             ],
             AddExceptionRangeStatus.ENTER_END_DATE: [
                 MessageHandler(Filters.regex(r"^\d{4}-\d{2}-\d{2}$"), get_range_end)
+            ],
+        },
+        fallbacks=[CommandHandler("cancel", cancel)],
+    )
+)
+
+current_bot.dispatcher.add_handler(
+    ConversationHandler(
+        entry_points=[
+            CommandHandler("change_text_holiday", add_exception_day),
+            CommandHandler("enter_exceptions", add_exception_day),
+        ],
+        states={
+            AddExceptionDayStatus.ENTER_TEXT: [
+                MessageHandler(Filters.text, get_day_message)
+            ],
+            AddExceptionDayStatus.ENTER_DATE: [
+                MessageHandler(
+                    Filters.regex(r"^((\d{4}-)?\d{2}-\d{2},?)+$"), get_day_date
+                )
             ],
         },
         fallbacks=[CommandHandler("cancel", cancel)],
