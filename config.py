@@ -51,7 +51,8 @@ class Config:
                 }
             },
             "loggers": {
-                "telegram_bot": {"level": env.log_level("LEVEL"), "handlers": ["file"]}
+                "telegram_bot": {"level": env.log_level("LEVEL"), "handlers": ["file"]},
+                "urllib3": {"level": env.log_level("LEVEL"), "handlers": ["file"]},
             },
         }
 
