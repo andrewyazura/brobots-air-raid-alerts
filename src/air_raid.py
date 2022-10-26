@@ -20,6 +20,9 @@ class AirRaidApi:
             params={"q": str(tag)},
         )
 
+        if not response.text:
+            self.logger.debug("response is empty")
+
         soup = BeautifulSoup(markup=response.text, features="html.parser")
         last_message = soup.find_all(
             name="div", attrs={"class": "tgme_widget_message"}
@@ -30,6 +33,8 @@ class AirRaidApi:
 
         air_raid = "відбій" not in message_text.lower()
         message_url = self.make_url(last_message["data-post"])
+
+        self.logger.debug("last message url: %s", message_url)
 
         return air_raid, message_url
 
