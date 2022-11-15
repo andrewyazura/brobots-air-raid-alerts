@@ -371,7 +371,7 @@ def check_exception_days(update: Update, *_) -> None:
     text = update.message.text
     day_type = None
 
-    if "exceptions" in text:
+    if "exception" in text:
         day_type = ExceptionDayType.EXCEPTION
     elif "holiday" in text:
         day_type = ExceptionDayType.HOLIDAY
