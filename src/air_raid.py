@@ -19,6 +19,8 @@ class AirRaidApi:
         if not response.text:
             self.logger.debug("response is empty")
 
+        self.logger.debug(response.text)
+
         try:
             response_data = response.json()
         except JSONDecodeError:

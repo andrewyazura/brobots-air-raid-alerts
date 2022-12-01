@@ -13,6 +13,7 @@ from telegram.ext import (
 )
 
 from src import current_bot
+from src.air_raid import get_api
 from src.constants import ExceptionDayType, ExceptionRangeType
 from src.jobs.send_alert import set_morning_alert
 from src.models import ExceptionDay, ExceptionRange, NotificationTime, Response, User
@@ -73,6 +74,7 @@ def commands(update: Update, *_) -> None:
         "/change_text_holiday - переглянути свята\n\n"
         "/check_exception - переглянути дні, коли бот не працює\n"
         "/enter_exceptions - додати дні, коли бот не працюватиме\n\n"
+        "/debug_request - зробити запит на API і показати повну відповідь\n"
         "/logs - переглянути логи"
     )
 
@@ -115,6 +117,17 @@ def unsubscribe(update: Update, *_) -> None:
         return
 
     user.send_message("Ви не були підписані")
+
+
+@current_bot.register_handler(CommandHandler, "debug_request")
+@current_bot.log_handler
+@current_bot.protected
+def debug_request(update: Update, *_) -> None:
+    user = update.effective_user
+    location = current_bot.config.LOCATION
+
+    status = get_api().get_status(location)
+    user.send_message(f"Current status for {location} is {status}")
 
 
 @current_bot.register_handler(CommandHandler, "logs")
