@@ -1,3 +1,4 @@
+from json.decoder import JSONDecodeError
 from logging import getLogger
 from urllib.parse import urljoin
 
@@ -13,14 +14,17 @@ class AirRaidApi:
         self.logger = getLogger("telegram_bot")
 
     def get_status(self, tag: str) -> bool:
-        response = requests.get(
-            url=self.url, timeout=self.timeout
-        )
+        response = requests.get(url=self.url, timeout=self.timeout)
 
         if not response.text:
             self.logger.debug("response is empty")
 
-        for alert in response["alerts"]:
+        try:
+            response_data = response.json()
+        except JSONDecodeError:
+            self.logger.debug("response format is an invalid json string")
+
+        for alert in response_data["alerts"]:
             if tag in alert["location_title"]:
                 return True
 
