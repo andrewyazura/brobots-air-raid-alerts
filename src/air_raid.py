@@ -13,7 +13,7 @@ class AirRaidApi:
         self.timeout = timeout
         self.logger = getLogger("telegram_bot")
 
-    def get_status(self, tag: str) -> tuple[bool, str]:
+    def get_status(self, tag: str) -> bool:
         response = requests.get(
             url=self.make_url("/s/air_alert_ua"),
             timeout=self.timeout,
@@ -32,11 +32,8 @@ class AirRaidApi:
         ).getText()
 
         air_raid = "відбій" not in message_text.lower()
-        message_url = self.make_url(last_message["data-post"])
 
-        self.logger.debug("last message url: %s", message_url)
-
-        return air_raid, message_url
+        return air_raid
 
     def make_url(self, endpoint: str) -> str:
         return urljoin(self.url, endpoint)

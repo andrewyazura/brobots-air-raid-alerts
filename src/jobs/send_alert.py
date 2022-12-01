@@ -63,7 +63,7 @@ def send_alert(*_) -> None:
         return
 
     api = get_api()
-    air_raid, _ = api.get_status(tag=current_bot.config.LOCATION)
+    air_raid = api.get_status(tag=current_bot.config.LOCATION)
     current_bot.logger.debug("air_raid_alert = %s", air_raid)
 
     last_notification = (
@@ -104,7 +104,7 @@ def send_morning_alert(*_) -> None:
         return
 
     api = get_api()
-    air_raid, _ = api.get_status(tag=current_bot.config.LOCATION)
+    air_raid = api.get_status(tag=current_bot.config.LOCATION)
     current_bot.logger.debug("air_raid_alert = %s", air_raid)
 
     Notification.create(air_raid_alert=air_raid)
