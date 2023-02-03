@@ -27,7 +27,7 @@ class AirRaidApi:
             self.logger.debug("response format is an invalid json string")
 
         for alert in response_data["alerts"]:
-            if tag in alert["location_title"]:
+            if tag in alert["n"]:
                 return True
 
         return False
