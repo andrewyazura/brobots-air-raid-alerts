@@ -29,3 +29,4 @@ services:
 
 volumes:
   air-raid-data:
+    name: "air-raid-data"
