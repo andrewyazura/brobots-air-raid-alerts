@@ -57,7 +57,11 @@ class Config:
         }
 
     with env.prefixed("AIR_RAID_API_"):
-        AIR_RAID_API = {"url": env.str("URL"), "timeout": env.float("TIMEOUT")}
+        AIR_RAID_API = {
+            "url": env.str("URL"),
+            "timeout": env.float("TIMEOUT"),
+            "token": env.str("TOKEN"),
+        }
 
     with env.prefixed("JOB_SEND_ALERT_"):
         JOB_SEND_ALERT = {"interval": env.int("INTERVAL"), "first": env.int("FIRST")}

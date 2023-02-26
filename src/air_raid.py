@@ -1,6 +1,5 @@
 from json.decoder import JSONDecodeError
 from logging import getLogger
-from urllib.parse import urljoin
 
 import requests
 
@@ -8,13 +7,18 @@ from src import current_bot
 
 
 class AirRaidApi:
-    def __init__(self, url: str, timeout: int | float) -> None:
+    def __init__(self, url: str, timeout: int | float, token: str) -> None:
         self.url = url
         self.timeout = timeout
+        self.token = token
         self.logger = getLogger("telegram_bot")
 
     def get_status(self, tag: str) -> bool:
-        response = requests.get(url=self.url, timeout=self.timeout)
+        response = requests.get(
+            url=self.url,
+            timeout=self.timeout,
+            headers={"Authorization": f"Bearer {self.token}"},
+        )
 
         if not response.text:
             self.logger.debug("response is empty")
@@ -31,9 +35,6 @@ class AirRaidApi:
                 return True
 
         return False
-
-    def make_url(self, endpoint: str) -> str:
-        return urljoin(self.url, endpoint)
 
 
 def get_api() -> AirRaidApi:
