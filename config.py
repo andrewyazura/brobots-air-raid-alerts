@@ -1,3 +1,5 @@
+import sys
+
 from environs import Env
 from pytz import timezone
 
@@ -31,28 +33,26 @@ class Config:
         }
 
     with env.prefixed("LOG_"):
-        LOG_FILENAME = env.str("FILENAME")
-
         LOG_CONFIG = {
             "version": 1,
             "disable_existing_loggers": False,
             "formatters": {
-                "file": {"format": env.str("FORMAT"), "datefmt": env.str("DATEFMT")}
+                "default": {"format": env.str("FORMAT"), "datefmt": env.str("DATEFMT")}
             },
             "handlers": {
-                "file": {
+                "default": {
                     "level": env.log_level("LEVEL"),
-                    "formatter": "file",
-                    "class": "logging.handlers.TimedRotatingFileHandler",
-                    "filename": LOG_FILENAME,
-                    "when": env.str("ROTATE_TIME"),
-                    "backupCount": env.int("ROTATE_BACKUP_COUNT"),
-                    "utc": True,
+                    "formatter": "default",
+                    "class": "logging.StreamHandler",
+                    "stream": sys.stdout,
                 }
             },
             "loggers": {
-                "telegram_bot": {"level": env.log_level("LEVEL"), "handlers": ["file"]},
-                "urllib3": {"level": env.log_level("LEVEL"), "handlers": ["file"]},
+                "telegram_bot": {
+                    "level": env.log_level("LEVEL"),
+                    "handlers": ["default"],
+                },
+                "urllib3": {"level": env.log_level("LEVEL"), "handlers": ["default"]},
             },
         }
 

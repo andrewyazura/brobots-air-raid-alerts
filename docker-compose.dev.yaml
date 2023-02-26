@@ -1,0 +1,11 @@
+services:
+  api:
+    build:
+      context: .
+      tags:
+        - "air-raid-alerts"
+    volumes:
+      - .:/app
+
+  postgres:
+    image: postgres:15.2-bullseye
