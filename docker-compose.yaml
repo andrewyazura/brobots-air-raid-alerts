@@ -1,6 +1,5 @@
 services:
   bot:
-    container_name: bot
     image: air-raid-alerts
     depends_on:
       - postgres
@@ -16,7 +15,6 @@ services:
       - .env
 
   postgres:
-    container_name: postgres
     image: postgres:15.2-bullseye
     deploy:
       <<: *default_deploy
