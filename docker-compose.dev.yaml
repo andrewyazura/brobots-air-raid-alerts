@@ -16,7 +16,7 @@ services:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
     volumes:
-      - air-raid-data:/var/lib/postgresql
+      - air-raid-data:/var/lib/postgresql/data:rw
 
 volumes:
   air-raid-data:
