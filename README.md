@@ -10,11 +10,9 @@ Information source: https://t.me/air_alert_ua
 
 ## Deployment
 
-1. Create a virtual environment with `python3.10`
-2. Install dependencies from `Pipfile.lock`
-3. Create `.env` file
-4. Setup the database
-5. Run `main.py`
+1. Pull project image from this repo's packages
+2. Add `.env` file with your settings
+3. Start the container
 
 ## Setting up the database
 
