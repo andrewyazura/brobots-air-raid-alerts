@@ -72,10 +72,17 @@ def send_alert(*_) -> None:
 
     Notification.create(air_raid_alert=air_raid)
 
-    if not air_raid:
+    if not last_notification:
         return
 
-    if not last_notification:
+    if not air_raid:
+        if not last_notification.air_raid_alert:
+            return
+
+        now = get_now()
+        if datetime.time(9, 0) <= now.time() <= datetime.time(19, 0):
+            message_everyone(Response.get_by_id("text_alert_4").value)
+
         return
 
     if last_notification.air_raid_alert:

@@ -73,7 +73,7 @@ def populate_responses() -> None:
     try:
         NotificationTime.get_by_id(1)
     except DoesNotExist:
-        NotificationTime.create(time=datetime.time(8, 10))
+        NotificationTime.create(time=datetime.time(8, 0, 0))
 
     try:
         Response.get_by_id("text_no_alert")
@@ -121,4 +121,14 @@ def populate_responses() -> None:
             "розпочинаємо очне навчання.",
             description="Тривога почалася між 9:00 та 17:00",
             keyboard_order=3,
+        )
+
+    try:
+        Response.get_by_id("text_alert_4")
+    except DoesNotExist:
+        Response.get_or_create(
+            id="text_alert_4",
+            value="✅ <b>Відбій тривоги.</b> Школа #brobots повертається до навчання.",
+            description="Тривога почалася між 9:00 та 17:00",
+            keyboard_order=4,
         )
