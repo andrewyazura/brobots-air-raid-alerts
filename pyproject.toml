@@ -1,0 +1,25 @@
+[tool.poetry]
+name = "brobots-air-raid-alerts"
+version = "0.1.0"
+description = ""
+authors = ["Andrew Yatsura <andrewyazura203@gmail.com>"]
+license = "MIT"
+readme = "README.md"
+packages = [{ include = "brobots_air_raid_alerts" }]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+environs = "^9.5.0"
+python-telegram-bot = "13.14"
+pytz = "^2023.3.post1"
+requests = "^2.31.0"
+peewee = "^3.16.3"
+psycopg2-binary = "^2.9.7"
+
+[tool.poetry.group.dev.dependencies]
+black = "^23.9.1"
+ruff = "^0.0.287"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
