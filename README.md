@@ -10,9 +10,23 @@ Information source: https://t.me/air_alert_ua
 
 ## Deployment
 
-1. Pull project image from this repo's packages
-2. Add `.env` file with your settings
-3. Start the container
+1. Add the project to your flake inputs
+```nix
+inputs = {
+    brobots-alerts-app = { url = "github:andrewyazura/brobots-air-raid-alerts"; };
+};
+```
+2. Import the nixos module
+```nix
+imports = [ inputs.brobots-alerts-app.nixosModules.default ];
+```
+3. Enable the service
+```nix
+services.brobots-alerts = {
+    enable = true;
+    environmentFile = /path/to/env/file;
+};
+```
 
 ## Setting up the database
 
