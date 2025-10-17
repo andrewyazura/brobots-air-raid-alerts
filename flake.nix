@@ -73,8 +73,15 @@
         '';
       };
 
-      packages.${system}.default =
-        pythonSet.mkVirtualEnv "brobots-alerts-env" workspace.deps.default;
+      packages.${system} = let
+        inherit (pkgs.callPackage pyproject-nix.build.util { }) mkApplication;
+      in {
+        default = mkApplication {
+          venv =
+            pythonSet.mkVirtualEnv "brobots-alerts-env" workspace.deps.default;
+          package = pythonSet."brobots-air-raid-alerts";
+        };
+      };
 
       nixosModules.brobots-alerts = { config, pkgs, lib, ... }:
         let cfg = config.services.brobots-alerts;

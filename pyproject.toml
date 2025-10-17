@@ -19,3 +19,10 @@ dev = [
     "black>=23.9.1,<24",
     "ruff>=0.0.287,<0.0.288",
 ]
+
+[project.scripts]
+brobots-alerts = "src.main:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["src*"]
