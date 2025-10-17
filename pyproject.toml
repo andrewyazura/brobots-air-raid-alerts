@@ -23,6 +23,10 @@ dev = [
 [project.scripts]
 brobots-alerts = "src.main:main"
 
-[tool.setuptools.packages.find]
-where = ["."]
-include = ["src*"]
+[build-system]
+requires = ["uv_build>=0.9.3"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "src"
+module-root = ""
