@@ -1,25 +1,32 @@
-[tool.poetry]
+[project]
 name = "brobots-air-raid-alerts"
-version = "0.1.0"
+version = "2.0.0"
 description = ""
-authors = ["Andrew Yatsura <andrewyazura203@gmail.com>"]
-license = "MIT"
+authors = [{ name = "Andrew Yatsura", email = "andrewyazura203@gmail.com" }]
+requires-python = "~=3.11.0"
 readme = "README.md"
-packages = [{ include = "brobots_air_raid_alerts" }]
+dependencies = [
+    "environs>=9.5.0,<10",
+    "python-telegram-bot==13.14",
+    "pytz~=2023.3.post1",
+    "requests>=2.31.0,<3",
+    "peewee>=3.16.3,<4",
+    "psycopg2-binary>=2.9.7,<3",
+]
 
-[tool.poetry.dependencies]
-python = "^3.11"
-environs = "^9.5.0"
-python-telegram-bot = "13.14"
-pytz = "^2023.3.post1"
-requests = "^2.31.0"
-peewee = "^3.16.3"
-psycopg2-binary = "^2.9.7"
+[dependency-groups]
+dev = [
+    "black>=23.9.1,<24",
+    "ruff>=0.0.287,<0.0.288",
+]
 
-[tool.poetry.group.dev.dependencies]
-black = "^23.9.1"
-ruff = "^0.0.287"
+[project.scripts]
+brobots-alerts = "src.main:main"
 
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["uv_build>=0.9.3"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "src"
+module-root = ""

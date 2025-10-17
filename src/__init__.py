@@ -1,6 +1,6 @@
 from logging.config import dictConfig
 
-from config import Config
+from src.config import Config
 from src.telegram_bot import TelegramBot
 
 current_bot = TelegramBot()
