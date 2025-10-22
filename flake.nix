@@ -83,7 +83,7 @@
         };
       };
 
-      nixosModules.brobots-alerts = { config, pkgs, lib, ... }:
+      nixosModules.default = { config, pkgs, lib, ... }:
         let cfg = config.services.brobots-alerts;
         in {
           options.services.brobots-alerts = {
@@ -94,12 +94,13 @@
             };
           };
 
-          config = lib.mkIf config.services.brobots-alerts.enable {
+          config = lib.mkIf cfg.enable {
             users.users.brobots-alerts = {
               description = "brobots air raid alerts user";
               isSystemUser = true;
               group = "brobots-alerts";
             };
+            users.groups.brobots-alerts = { };
 
             systemd.services.brobots-air-raid-alerts = {
               description = "brobots air raid alerts service";

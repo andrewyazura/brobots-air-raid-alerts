@@ -11,16 +11,21 @@ Information source: https://t.me/air_alert_ua
 ## Deployment
 
 1. Add the project to your flake inputs
+
 ```nix
 inputs = {
     brobots-alerts-app = { url = "github:andrewyazura/brobots-air-raid-alerts"; };
 };
 ```
+
 2. Import the nixos module
+
 ```nix
 imports = [ inputs.brobots-alerts-app.nixosModules.default ];
 ```
+
 3. Enable the service
+
 ```nix
 services.brobots-alerts = {
     enable = true;
